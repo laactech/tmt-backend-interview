@@ -1,3 +1,6 @@
+import datetime
+
+from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -27,8 +30,23 @@ class InventoryListCreateView(APIView):
         return Response(serializer.data, status=201)
     
     def get(self, request: Request, *args, **kwargs) -> Response:
-        serializer = self.serializer_class(self.get_queryset(), many=True)
-        
+        queryset = self.get_queryset()
+
+        if request.query_params.get("created_at"):
+            try:
+                created_at_filter = datetime.datetime.fromisoformat(
+                    request.query_params.get("created_at")
+                )
+                queryset = queryset.filter(created_at__lte=created_at_filter)
+            except ValueError:
+                raise serializers.ValidationError(
+                    {
+                        "error": "query parameter created_at must be iso formatted datetime string"
+                    }
+                )
+
+        serializer = self.serializer_class(queryset, many=True)
+
         return Response(serializer.data, status=200)
     
     def get_queryset(self):
