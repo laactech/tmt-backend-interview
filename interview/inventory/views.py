@@ -1,3 +1,5 @@
+from rest_framework import mixins
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -7,11 +9,11 @@ from interview.inventory.schemas import InventoryMetaData
 from interview.inventory.serializers import InventoryLanguageSerializer, InventorySerializer, InventoryTagSerializer, InventoryTypeSerializer
 
 
-class InventoryListCreateView(APIView):
+class InventoryListCreateView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericAPIView):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
     
-    def post(self, request: Request, *args, **kwargs) -> Response:
+    def create(self, request: Request, *args, **kwargs) -> Response:
         try:
             metadata = InventoryMetaData(**request.data['metadata'])
         except Exception as e:
@@ -25,11 +27,6 @@ class InventoryListCreateView(APIView):
         serializer.save()
         
         return Response(serializer.data, status=201)
-    
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        serializer = self.serializer_class(self.get_queryset(), many=True)
-        
-        return Response(serializer.data, status=200)
     
     def get_queryset(self):
         return self.queryset.all()
